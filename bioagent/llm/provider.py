@@ -23,7 +23,3 @@ class LLMProvider(Protocol):
         tools: list[ToolSpec] | None = None,
         thinking: bool | None = None,  # per-call override of reasoning (None = config default)
     ) -> ChatResult: ...
-
-    def embed(
-        self, texts: list[str], *, model_profile: str = "embeddings"
-    ) -> list[list[float]]: ...

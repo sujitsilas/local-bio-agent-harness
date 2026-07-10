@@ -1,5 +1,5 @@
 """Shared test fixtures. A scripted fake LLM provider lets us exercise the structured
-output / planner / critic logic WITHOUT a live model.
+output logic WITHOUT a live model.
 """
 from __future__ import annotations
 
@@ -24,9 +24,6 @@ class FakeProvider:
                            "thinking": thinking})
         content = self._responses.popleft() if self._responses else "{}"
         return ChatResult(content=content, usage=Usage())
-
-    def embed(self, texts, *, model_profile="embeddings"):
-        return [[0.0, 1.0, 0.0] for _ in texts]
 
 
 @pytest.fixture

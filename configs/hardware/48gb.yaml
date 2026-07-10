@@ -1,5 +1,5 @@
 # 48 GB+ dev machine (Apple M5 Pro). One big primary as unified reasoning+coder,
-# plus embeddings, plus optional tiny classifier, plus data.
+# plus an optional tiny classifier, plus data.
 # A separate 46 GB coder does NOT coexist with a 20 GB primary here — keep
 # single-primary unless on 64 GB+ (§2, §14).
 #
@@ -33,17 +33,7 @@ models:
     supports_response_format: false
     max_tokens: 6144
     extra_body: { chat_template_kwargs: { enable_thinking: true } }
-  embeddings:                     # OPTIONAL (RAG/vector memory, M6/M8). mlx_lm.server
-    profile: embeddings           # serves chat, not embeddings — see note below.
-    model: "mlx-community/Qwen3-Embedding-0.6B"
-    endpoint: "http://localhost:8080/v1"
-    api_key: "not-needed"
 
 anndata:
   backed_mode: false
   subsample_interactive: 100000
-
-# Embeddings note: mlx_lm.server exposes /v1/chat/completions, not /v1/embeddings.
-# The core scRNA-seq loop (M1–M5) needs no embeddings. When you reach the RAG/paper
-# memory (M6/M8), serve embeddings separately — e.g. `ollama pull nomic-embed-text`
-# (Ollama is already installed) and point the embeddings profile at :11434/v1.

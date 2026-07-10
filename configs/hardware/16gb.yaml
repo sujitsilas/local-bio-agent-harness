@@ -1,12 +1,11 @@
 # 16 GB tier. Load/unload with swap latency ("routing" = swap here).
-# Never load more than primary + embeddings concurrently.
 tier: "16gb"
 concurrent_models: false          # load/unload, do not co-resident route
 
 models:
   primary:                        # reasoning + code-writer (swappable)
     profile: primary
-    model: "Qwen3.5-9B-MLX-4bit"  # ~6 GB. Re-verify id at build time (§14).
+    model: "Qwen3.5-9B-MLX-4bit"  # ~6 GB. Re-verify id at build time.
     endpoint: "http://localhost:1234/v1"
     api_key: "not-needed"
     supports_response_format: true
@@ -16,11 +15,6 @@ models:
     endpoint: "http://localhost:1234/v1"
     api_key: "not-needed"
     supports_response_format: true
-  embeddings:
-    profile: embeddings
-    model: "nomic-embed-text"     # ~0.5 GB, or Qwen3-Embedding-0.6B
-    endpoint: "http://localhost:1234/v1"
-    api_key: "not-needed"
 
 anndata:
   backed_mode: true               # load .h5ad backed; subsample interactive steps

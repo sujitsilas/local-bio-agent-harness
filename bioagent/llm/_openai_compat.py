@@ -177,16 +177,5 @@ class OpenAICompatProvider:
         yield {"channel": "done", "content": "".join(content), "reasoning": "".join(reasoning),
                "model": model, "usage": usage}
 
-    # -- embeddings ---------------------------------------------------------- #
-    def embed(self, texts: list[str], *, model_profile: str = "embeddings") -> list[list[float]]:
-        spec = self._spec(model_profile)
-        resp = self._client.post(
-            f"{spec.endpoint}/embeddings",
-            headers=self._headers(spec),
-            json={"model": spec.model, "input": texts},
-        )
-        resp.raise_for_status()
-        return [row["embedding"] for row in resp.json()["data"]]
-
     def close(self) -> None:
         self._client.close()

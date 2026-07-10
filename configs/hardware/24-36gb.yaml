@@ -15,11 +15,6 @@ models:
     endpoint: "http://localhost:1234/v1"
     api_key: "not-needed"
     supports_response_format: true
-  embeddings:
-    profile: embeddings
-    model: "nomic-embed-text"
-    endpoint: "http://localhost:1234/v1"
-    api_key: "not-needed"
 
 anndata:
   backed_mode: false
