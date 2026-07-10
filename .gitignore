@@ -1,15 +1,20 @@
-.venv/
-.runs/
+# raw dropped notebooks/scripts (can be huge) — the EXTRACTED examples/ *are* committed
+examples_raw/*
+!examples_raw/.gitkeep
+
+# data + large notebooks
+*.h5ad
+*.ipynb
+macrophages_test/
+
+# python / tooling cruft
 __pycache__/
 *.pyc
-*.sqlite
-*.h5ad
+.venv/
 .pytest_cache/
-.ruff_cache/
-*.egg-info/
-dist/
-build/
+.DS_Store
+.opencode/
 
-# large data notebooks (exceed GitHub limits)
-macrophages_resident_recruited.ipynb
-*.h5ad
+# old-harness runtime
+.runs/
+*.sqlite

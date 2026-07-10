@@ -1,115 +1,76 @@
-# bioagent-bench — how well can a local LLM agent call cell types?
+# A local, style-aware bioinformatics coding assistant
 
-A controlled benchmark of one narrow capability: **de novo cell-type annotation** by an
-LLM agent. The agent clusters a scRNA-seq dataset itself, then calls each cluster's
-identity from its differentially-expressed genes + live NCBI literature — with **no
-pre-loaded gene→cell-type dictionary**. We score those calls against held-out trusted
-labels and report numbers, not vibes: accuracy, ARI, macro-F1, structured-output failure
-rate, and **calibration** (does the agent's stated confidence track its correctness?).
-Then we **ablate** each component to measure what it's worth.
+Chat with a **local** LLM ([opencode](https://opencode.ai) + a Qwen3.6 model on your own
+Mac) that writes single-cell / omics analysis and **publication-ready figures in *your*
+code style** — because it has a searchable corpus of your own code and greps it before
+writing anything.
 
-Everything runs locally on Apple silicon (MLX-served quantized model; the expression data
-never enters the model's context — it lives in a Jupyter kernel and only summaries cross).
-
-## What it measures
-
-| metric | question |
-|---|---|
-| accuracy / macro-F1 | under a majority-vote label map, how often is the call right? |
-| Adjusted Rand Index | name-agnostic: does the agent's partition agree with the reference? |
-| ECE + reliability table | is the agent's confidence calibrated, or over/under-confident? |
-| structured-output failure rate | how often does the local model fail to emit valid JSON? |
-
-## Ablation knobs (the controlled experiment)
-
-| knob | flag | hypothesis it tests |
-|---|---|---|
-| NCBI literature grounding | `--no-grounding` | does retrieving marker literature improve calls? |
-| model reasoning (thinking) | `--no-thinking` | does chain-of-thought help — and at what latency? |
-| self-discovered-signature reuse | `--no-reuse` | does the agent reusing its own learned signatures help? |
-| critic pass | `--critic` | does a second "critic" agent improve calibration or just add latency? |
-
-`bioagent bench <dataset> --sweep` runs the baseline + one-knob-off for each + the critic,
-and prints a table.
-
-## Datasets (trusted, held-out labels)
-
-- **pbmc68k** — `sc.datasets.pbmc68k_reduced()`; `bulk_labels` are **FACS-sorted** populations
-  (as close to ground truth as scRNA gets).
-- **pbmc3k** — `sc.datasets.pbmc3k_processed()`; curated `louvain` cell-type names.
-- any local `.h5ad` via `bioagent bench data.h5ad --reference-col <obs_col>`.
-
-The reference column is used **only for scoring** — never shown to the agent.
-
-## Baseline result (pbmc68k, FACS-sorted labels)
+Nothing leaves your machine. No API keys.
 
 ```
-| ablation                                | accuracy | ari   | macro_f1 | ece   | struct_fail | n_clusters |
-| ground=on,think=on,reuse=on,critic=off  | 0.731    | 0.472 | 0.474    | 0.139 | 0.0         | 10         |
-
-Calibration (ECE=0.139):   the agent is over-confident
-| bin        | mean conf | accuracy | n   |
-| 0.5–0.6    | 0.60      | 1.00     | 13  |
-| 0.7–0.8    | 0.79      | 0.54     | 84  |   <- states .79, right .54
-| 0.8–0.9    | 0.87      | 0.75     | 603 |   <- states .87, right .75
+opencode  ──►  Ollama (qwen3.6-coding, local)      the model
+    │
+    ├── AGENTS.md          tells it to mirror your style
+    └── examples/          your code, extracted + greppable  ◄── ingest.py ── examples_raw/ (drop notebooks here)
 ```
 
-The headline finding isn't the accuracy — it's the **miscalibration**: the agent's stated
-confidence runs well ahead of its correctness. That's the kind of agent-behavior result the
-benchmark exists to surface.
+## Why Ollama and not mlx-lm
+
+`mlx_lm.server` is faster on paper, but its KV cache grows unbounded and Metal wires that
+memory, so a long coding session OOM-crashes with no warning (a known, unfixed bug as of
+0.31.x — exactly the failure mode for an all-day assistant). Ollama enforces a fixed
+context, so it stays stable. We use `qwen3.6:35b-a3b-mxfp8` — the Metal-optimized 8-bit
+float weights, which are noticeably better than the generic GGUF Q4_K_M Ollama pulls by
+default — tuned via a [`Modelfile`](Modelfile) (16K context, no presence penalty).
 
 ## Setup (Apple silicon)
 
 ```bash
-uv venv && uv pip install -e ".[dev]"
-uv pip install "mlx-lm==0.31.3" "transformers==5.10.4"   # see version note below
-./scripts/serve_mlx.sh          # serves mlx-community/Qwen3.6-35B-A3B-4bit on :8080
-bioagent doctor                 # checks uv, model endpoint
+brew install ollama          # runtime
+npm i -g opencode-ai          # the agent
+
+# serve the tuned local model (pulls mxfp8 ~37GB + builds qwen3.6-coding the first time)
+./scripts/serve_ollama.sh
 ```
 
-> Version pin: mlx_lm 0.31.3 needs transformers 5.x, but 5.13.0 breaks its import and 4.x
-> lacks the Qwen3.6 tokenizer — 5.10.4 is the known-good middle.
-
-## Run
+Then teach it your style — drop your notebooks/scripts into `examples_raw/` and ingest:
 
 ```bash
-bioagent bench pbmc68k                    # baseline (all knobs on)
-bioagent bench pbmc68k --sweep            # full ablation table
-bioagent bench pbmc68k --no-thinking      # ~10x faster (reasoning off)
-bioagent bench data.h5ad --reference-col cell_type
+cp ~/my_analysis.ipynb examples_raw/
+python ingest.py             # extracts code -> examples/*.py + examples/INDEX.md
 ```
 
-Results (JSON + a markdown table) land in `.runs/benchmarks/<dataset>/`.
+`ingest.py` is stdlib-only (any Python). It pulls **code only** (never outputs/data),
+splits it into one snippet per task titled by your own comments, and records the key
+plotting/analysis calls + libraries in a grep-friendly index.
 
-> Reasoning-on runs are slow — the 35B model streams thousands of chain-of-thought tokens
-> per call (the pbmc68k baseline took ~40 min for 10 clusters). Use `--no-thinking` for
-> quick iteration; the ablation sweep quantifies exactly what the reasoning buys you.
+## Use it
 
-## How a call is made (per cluster)
+```bash
+opencode                     # TUI chat in this folder
+# or one-shot:
+opencode run "make a Burn-vs-Sham volcano plot for the recruited macrophages"
+```
 
-1. leiden clustering on the dataset's embedding (the agent's own partition).
-2. `rank_genes_groups` → top DE markers per cluster.
-3. optional: NCBI/PubMed search on those markers (objective, not label-driven).
-4. the model calls the identity from markers + literature, returning a label + supporting
-   markers + citations + a confidence, as validated JSON (reasoning streamed on the first
-   attempt; a thinking-off repair guarantees clean JSON if it truncates).
-5. confident, novel calls are saved back as signatures the agent can reuse later.
+opencode greps `examples/` for the relevant pattern, reads your snippet, and writes new
+code that matches your imports, your matplotlib/seaborn + adjustText conventions, your
+palettes and helper functions, and your `# ═══` section style — saved at `dpi=300`,
+publication-ready. Config: [`opencode.json`](opencode.json); instructions:
+[`AGENTS.md`](AGENTS.md).
+
+### Remote use (assistant on a second Mac)
+
+Point the second machine's `opencode.json` `baseURL` at `http://<server-ip>:11434/v1`
+(`ipconfig getifaddr en0`), or tunnel: `ssh -L 11434:localhost:11434 user@your-mac`.
 
 ## Layout
 
 ```
-bioagent/
-├── eval/            metrics.py · datasets.py · annotation.py · calling.py · benchmark.py
-├── llm/             model-agnostic provider (MLX/Ollama), structured output + streaming
-├── exec/            per-Run uv venv + Jupyter kernel (data stays out of the LLM context)
-├── bio/priors_kb.py the agent's own discovered signatures (no pre-loaded dictionary)
-├── tools/apis/      NCBI knowledge layer (pubmed/geo/ensembl/uniprot)
-└── cli.py           bioagent bench · bioagent doctor
-tests/               metrics, KB, structured-output, config
-```
-
-## Tests
-
-```bash
-pytest        # metrics (ARI/PRF/calibration), KB, structured-output repair, config
+opencode.json     opencode config → local Ollama model + AGENTS.md
+AGENTS.md         "write in this user's style; grep examples/ first"
+Modelfile         tuned qwen3.6-coding (mxfp8, 16K ctx, no presence penalty)
+ingest.py         examples_raw/*.ipynb|*.py  →  examples/*.py + INDEX.md
+examples/         your code, extracted + greppable (committed)
+examples_raw/     drop zone for raw notebooks (gitignored — can be large)
+scripts/serve_ollama.sh   pull + build + serve the model, kept warm
 ```
