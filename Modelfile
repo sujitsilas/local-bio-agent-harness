@@ -4,6 +4,11 @@
 # Ollama pulls by default, and Ollama (unlike mlx_lm.server) enforces a fixed context so
 # the KV cache can't grow unbounded and OOM-crash Metal mid-conversation.
 FROM qwen3.6:35b-a3b-mxfp8
-PARAMETER num_ctx 16384          # fixed context -> bounded KV cache, no Metal OOM
-PARAMETER presence_penalty 0     # the default 1.5 penalizes correct code repetition
+
+# fixed context -> bounded KV cache, no Metal OOM (comments must be on their own line)
+PARAMETER num_ctx 16384
+
+# the Ollama default presence_penalty (1.5) penalizes correct code repetition
+PARAMETER presence_penalty 0
+
 PARAMETER temperature 0.7
