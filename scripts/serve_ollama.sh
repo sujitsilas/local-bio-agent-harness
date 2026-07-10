@@ -16,4 +16,7 @@ if ! ollama list | grep -q "^${MODEL}"; then
 fi
 
 echo "serving Ollama (model ${MODEL} stays warm; Ctrl-C to stop)…"
-OLLAMA_HOST=0.0.0.0 OLLAMA_KEEP_ALIVE=24h exec ollama serve
+# CONTEXT_LENGTH bounds the KV cache server-wide (matches the Modelfile's num_ctx), so a
+# long session can't grow it toward the model's 262K max and OOM; KEEP_ALIVE keeps the
+# model resident; HOST lets a second machine connect over the LAN.
+OLLAMA_HOST=0.0.0.0 OLLAMA_KEEP_ALIVE=24h OLLAMA_CONTEXT_LENGTH=16384 exec ollama serve
