@@ -1,0 +1,28 @@
+# Expected-composition priors per tissue (§7.1). Drives the validation critic:
+# "tumor tissue, zero stromal -> FLAG".
+
+composition_priors:
+  - id: solid_tumor
+    tissue_type: solid_tumor
+    source_ref: "general oncology single-cell atlases"
+    expected_compartments: [tumor_epithelial, immune_infiltrate, stromal, endothelial]
+
+  - id: pbmc
+    tissue_type: pbmc
+    source_ref: "canonical PBMC composition"
+    expected_compartments: [t_cell, b_cell, nk_cell, monocyte, dendritic_cell]
+
+  - id: skin_wound
+    tissue_type: skin_wound
+    source_ref: "wound/burn healing single-cell studies"
+    expected_compartments: [keratinocyte, fibroblast, macrophage, monocyte, endothelial, t_cell]
+
+  - id: burn_tissue
+    tissue_type: burn_tissue
+    source_ref: "burn injury single-cell studies (lab context)"
+    expected_compartments: [macrophage, monocyte, neutrophil, fibroblast, keratinocyte, endothelial]
+
+  - id: liver
+    tissue_type: liver
+    source_ref: "liver cell atlas"
+    expected_compartments: [hepatocyte, kupffer_macrophage, endothelial, stellate, cholangiocyte, immune]

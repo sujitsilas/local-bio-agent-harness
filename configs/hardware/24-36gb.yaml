@@ -1,0 +1,26 @@
+# 24–36 GB tier.
+tier: "24-36gb"
+concurrent_models: false
+
+models:
+  primary:
+    profile: primary
+    model: "Qwen3.6-35B-A3B-MLX-4bit"  # ~22 GB MoE (~3B active). Re-verify id (§14).
+    endpoint: "http://localhost:1234/v1"
+    api_key: "not-needed"
+    supports_response_format: true
+  classifier:
+    profile: classifier
+    model: "Qwen3.5-9B-MLX-4bit"
+    endpoint: "http://localhost:1234/v1"
+    api_key: "not-needed"
+    supports_response_format: true
+  embeddings:
+    profile: embeddings
+    model: "nomic-embed-text"
+    endpoint: "http://localhost:1234/v1"
+    api_key: "not-needed"
+
+anndata:
+  backed_mode: false
+  subsample_interactive: 50000

@@ -1,0 +1,15 @@
+.venv/
+.runs/
+__pycache__/
+*.pyc
+*.sqlite
+*.h5ad
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# large data notebooks (exceed GitHub limits)
+macrophages_resident_recruited.ipynb
+*.h5ad
