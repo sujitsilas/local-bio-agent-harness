@@ -19,9 +19,13 @@ opencode  ──►  Ollama (qwen3.6-coding, local)      the model
 `mlx_lm.server` is faster on paper, but its KV cache grows unbounded and Metal wires that
 memory, so a long coding session OOM-crashes with no warning (a known, unfixed bug as of
 0.31.x — exactly the failure mode for an all-day assistant). Ollama enforces a fixed
-context, so it stays stable. We use `qwen3.6:35b-a3b-mxfp8` — the Metal-optimized 8-bit
-float weights, which are noticeably better than the generic GGUF Q4_K_M Ollama pulls by
-default — tuned via a [`Modelfile`](Modelfile) (16K context, no presence penalty).
+context, so it stays stable. We use **`qwen3.6:35b-a3b-q8_0`** — a near-lossless 8-bit GGUF
+quant, much better than the default Q4_K_M — tuned via a [`Modelfile`](Modelfile) (16K
+context, no presence penalty).
+
+> Why q8_0 and not the `mxfp8` weights? mxfp8 is served by Ollama's **MLX engine**, which
+> (as of Ollama 0.24) **does not stream** — streaming clients like opencode hang with zero
+> tokens. q8_0 runs on the llama.cpp engine, which streams, at equivalent 8-bit quality.
 
 ## Setup (Apple silicon)
 
@@ -29,7 +33,7 @@ default — tuned via a [`Modelfile`](Modelfile) (16K context, no presence penal
 brew install ollama          # runtime
 npm i -g opencode-ai          # the agent
 
-# serve the tuned local model (pulls mxfp8 ~37GB + builds qwen3.6-coding the first time)
+# serve the tuned local model (pulls q8_0 ~38GB + builds qwen3.6-coding the first time)
 ./scripts/serve_ollama.sh
 ```
 

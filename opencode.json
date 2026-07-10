@@ -9,7 +9,7 @@
       },
       "models": {
         "qwen3.6-coding": {
-          "name": "Qwen3.6 35B-A3B mxfp8 (tuned)",
+          "name": "Qwen3.6 35B-A3B Q8_0 (tuned)",
           "reasoning": true,
           "tool_call": true
         }

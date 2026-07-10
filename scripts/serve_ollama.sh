@@ -8,10 +8,11 @@ set -euo pipefail
 
 MODEL="${OC_MODEL:-qwen3.6-coding}"
 
-# one-time: pull the Metal-optimized mxfp8 weights + build the tuned model
+# one-time: pull the streaming GGUF q8_0 weights + build the tuned model
+# (NOT mxfp8 — Ollama's MLX engine doesn't stream, which hangs opencode)
 if ! ollama list | grep -q "^${MODEL}"; then
-  echo "building ${MODEL} from qwen3.6:35b-a3b-mxfp8…"
-  ollama pull qwen3.6:35b-a3b-mxfp8
+  echo "building ${MODEL} from qwen3.6:35b-a3b-q8_0…"
+  ollama pull qwen3.6:35b-a3b-q8_0
   ollama create "${MODEL}" -f "$(dirname "$0")/../Modelfile"
 fi
 

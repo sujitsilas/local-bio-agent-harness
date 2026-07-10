@@ -1,9 +1,11 @@
 # Tuned coding model for opencode. Build with:  ollama create qwen3.6-coding -f Modelfile
 #
-# mxfp8 (8-bit float, Metal-optimized) is higher quality than the generic GGUF Q4_K_M
-# Ollama pulls by default, and Ollama (unlike mlx_lm.server) enforces a fixed context so
-# the KV cache can't grow unbounded and OOM-crash Metal mid-conversation.
-FROM qwen3.6:35b-a3b-mxfp8
+# Use the GGUF q8_0 weights, NOT mxfp8: Ollama's MLX engine (which serves mxfp8/nvfp4)
+# does not stream in Ollama 0.24, so streaming clients like opencode hang with 0 tokens.
+# q8_0 runs on the llama.cpp engine (streams) and is near-lossless 8-bit — the quality
+# equivalent of mxfp8 without the streaming break. Ollama's fixed context (num_ctx) still
+# bounds the KV cache, so no Metal OOM on long sessions.
+FROM qwen3.6:35b-a3b-q8_0
 
 # fixed context -> bounded KV cache, no Metal OOM (comments must be on their own line)
 PARAMETER num_ctx 16384
